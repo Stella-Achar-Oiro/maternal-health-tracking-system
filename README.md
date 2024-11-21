@@ -1,235 +1,231 @@
-## Getting started
+# Maternal Health Tracking System Canister
 
-To get started developing in the browser, click this button:
+A decentralized maternal health tracking system built on the Internet Computer Protocol (ICP) platform using Azle (TypeScript CDK).
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/dacadeorg/icp-message-board-contract)
+## Overview
 
-If you rather want to use GitHub Codespaces, click this button instead:
+This canister provides a comprehensive system for tracking maternal health data, managing prenatal visits, and coordinating care between expectant mothers and healthcare providers. It includes automated risk assessment and real-time health monitoring capabilities.
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/dacadeorg/icp-message-board-contract?quickstart=1)
+## Features
 
-**NOTE**: After `dfx deploy`, when developing in GitHub Codespaces, run `./canister_urls.py` and click the links that are shown there.
+- **Real-time Health Monitoring**
+  - Vital signs tracking
+  - Automated risk assessment
+  - Alert system for concerning values
 
-If you prefer running VS Code locally and not in the browser, click "Codespaces: ..." or "Gitpod" in the bottom left corner and select "Open in VS Code" in the menu that appears. 
-If prompted, proceed by installing the recommended plugins for VS Code.
+- **Care Coordination**
+  - Prenatal visit management
+  - Provider activity tracking
+  - Emergency contact system
 
-To develop fully locally, first install [Docker](https://www.docker.com/get-started/) and [VS Code](https://code.visualstudio.com/) and start them on your machine.
-Next, click the following button to open the dev container locally:
+- **Data Management**
+  - Secure health records
+  - Complete medical history
+  - Prescription tracking
 
-[![Open locally in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/dacadeorg/icp-message-board-contract)
+## Prerequisites
 
-## Prerequisities
+Before you begin, ensure you have installed:
 
-1. Install `nvm`:
-- `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash`
+- Node.js (version 20 or higher)
+- DFX (DFINITY Canister SDK version 0.22.0)
+- Podman (for MacOS/Linux users)
 
-2. Switch to node v20:
-- `nvm install 20`
-- `nvm use 20`
+## Installation
 
-3. Install build dependencies:
-## For Ubuntu and WSL2
-```
-sudo apt-get install podman
-```
-## For macOS:
-```
-xcode-select --install
-brew install podman
-```
+1. **Install Node Version Manager (nvm)**
+   ```bash
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+   ```
 
-4. Install `dfx`
-- `DFX_VERSION=0.16.1 sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"`
+2. **Switch to Node.js version 20**
+   ```bash
+   nvm use 20
+   ```
 
-5. Add `dfx` to PATH:
-- `echo 'export PATH="$PATH:$HOME/bin"' >> "$HOME/.bashrc"`
+3. **Install DFX**
+   ```bash
+   DFX_VERSION=0.22.0 sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+   ```
 
-6. Create a project structure:
-- create `src` dir
-- create `index.ts` in the `src` dir
-- create `tsconfig.json` in the root directory with the next content
-```
-{
-    "compilerOptions": {
-        "allowSyntheticDefaultImports": true,
-        "strictPropertyInitialization": false,
-        "strict": true,
-        "target": "ES2020",
-        "moduleResolution": "node",
-        "allowJs": true,
-        "outDir": "HACK_BECAUSE_OF_ALLOW_JS"
-    }
-}
-```
-- create `dfx.json` with the next content
-```
-{
-  "canisters": {
-    "message_board": {
-      "type": "custom",
-      "main": "src/index.ts",
-      "candid": "src/index.did",
-      "candid_gen": "http",
-      "build": "npx azle message_board",
-      "wasm": ".azle/message_board/message_board.wasm",
-      "gzip": true,
-      "metadata": [
-        {
-            "name": "candid:service",
-            "path": "src/index.did"
-        },
-        {
-            "name": "cdk:name",
-            "content": "azle"
-        }
-    ]
-    }
-  }
-}
-```
-where `message_board` is the name of the canister. 
+4. **Add DFX to your PATH**
+   ```bash
+   echo 'export PATH="$PATH:$HOME/bin"' >> "$HOME/.bashrc"
+   ```
 
-6. Create a `package.json` with the next content and run `npm i`:
-```
-{
-  "name": "message_board",
-  "version": "0.1.0",
-  "description": "Internet Computer message board application",
-  "dependencies": {
-    "@dfinity/agent": "^0.21.4",
-    "@dfinity/candid": "^0.21.4",
-    "azle": "^0.21.1",
-    "express": "^4.18.2",
-    "uuid": "^9.0.1"
-  },
-  "engines": {
-    "node": "^20"
-  },
-  "devDependencies": {
-    "@types/express": "^4.17.21"
-  }
-}
+5. **Verify installations**
+   ```bash
+   dfx --version
+   node --version
+   ```
 
-```
+## Project Setup
 
-7. Run a local replica
-- `dfx start --host 127.0.0.1:8000`
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Stella-Achar-Oiro/maternal-health-tracking-system.git
+   cd maternal-health-tracking-system
+   ```
 
-#### IMPORTANT NOTE 
-If you make any changes to the `StableBTreeMap` structure like change datatypes for keys or values, changing size of the key or value, you need to restart `dfx` with the `--clean` flag. `StableBTreeMap` is immutable and any changes to it's configuration after it's been initialized are not supported.
-- `dfx start --host 127.0.0.1:8000 --clean`
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-8. Deploy a canister
-- `dfx deploy`
-Also, if you are building an HTTP-based canister and would like your canister to autoreload on file changes (DO NOT deploy to mainnet with autoreload enabled):
-```
-AZLE_AUTORELOAD=true dfx deploy
+## Running the Canister
+
+1. **Start the local Internet Computer**
+   ```bash
+   dfx start --host 127.0.0.1:8000
+   ```
+
+   For a clean start:
+   ```bash
+   dfx start --host 127.0.0.1:8000 --clean
+   ```
+
+2. **Deploy the canister**
+   ```bash
+   dfx deploy
+   ```
+
+   Development mode with auto-reload:
+   ```bash
+   AZLE_AUTORELOAD=true dfx deploy
+   ```
+
+3. **Get your canister ID**
+   ```bash
+   dfx canister id message_board
+   ```
+
+## API Documentation
+
+### Maternal Profiles
+
+#### Create Profile
+```bash
+curl -X POST http://<canister-id>.localhost:8000/maternal-profiles \
+-H "Content-type: application/json" \
+-d '{
+    "name": "Jane Doe",
+    "age": 28,
+    "bloodType": "O+",
+    "emergencyContact": "+1234567890",
+    "primaryCareProviderId": "provider-123",
+    "dueDate": "2024-12-25"
+}'
 ```
 
-9. Stop a local replica
-- `dfx stop`
-
-## Interaction with the canister
-
-When a canister is deployed, `dfx deploy` produces a link to the Candid interface in the shell output.
-
-Candid interface provides a simple UI where you can interact with functions in the canister.
-
-On the other hand, you can interact with the canister using `dfx` via CLI:
-
-### get canister id:
-- `dfx canister id <CANISTER_NAME>`
-Example:
-- `dfx canister id message_board`
-Response:
-```
-bkyz2-fmaaa-aaaaa-qaaaq-cai
+#### Get Profile
+```bash
+curl http://<canister-id>.localhost:8000/maternal-profiles/<profile-id>
 ```
 
-Now, the URL of your canister should like this:
-```
-http://bkyz2-fmaaa-aaaaa-qaaaq-cai.localhost:8000
+### Health Metrics
+
+#### Record Metrics
+```bash
+curl -X POST http://<canister-id>.localhost:8000/health-metrics \
+-H "Content-type: application/json" \
+-d '{
+    "maternalProfileId": "profile-123",
+    "weight": 65,
+    "bloodPressureSystolic": 120,
+    "bloodPressureDiastolic": 80,
+    "bloodSugar": 95,
+    "hemoglobinLevels": 12,
+    "recordedById": "provider-123",
+    "notes": "Regular checkup"
+}'
 ```
 
-With this URL, you can interact with the canister using an HTTP client of your choice. We are going to use `curl`.
+## Architecture
 
-### create a message:
-- `curl -X POST <CANISTER_URL>/<REQUEST_PATH> -H "Content-type: application/json" -d <PAYLOAD>`
-Example: 
-- `curl -X POST http://bkyz2-fmaaa-aaaaa-qaaaq-cai.localhost:8000/messages -H "Content-type: application/json" -d '{"title": "todo list", "body": "some important things", "attachmentURL": "url/path/to/some/photo/attachment"}'`
-Response:
-```
-{
-    "id": "d8326ec8-fe70-402e-8914-ca83f0f1055b",
-    "createdAt": "2024-02-09T11:24:32.441Z",
-    "title": "todo list",
-    "body": "some important things",
-    "attachmentURL": "url/path/to/some/photo/attachment"
-}
-```
+### Data Storage
+- Uses `StableBTreeMap` for persistent storage
+- Separate storage for profiles, metrics, visits, and alerts
+- Automatic data serialization and validation
 
-### update a message:
-- `curl -X PUT <CANISTER_URL>/<REQUEST_PATH>/<MESSAGE_ID> -H "Content-type: application/json" -d <PAYLOAD>`
-Example (In this case we include a message id in the payload to identify the message we want to update): 
-- `curl -X PUT  http://bkyz2-fmaaa-aaaaa-qaaaq-cai.localhost:8000/messages/d8326ec8-fe70-402e-8914-ca83f0f1055b -H "Content-type: application/json" -d '{"title": "UPDATED TITLE", "body": "some important things", "attachmentURL": "url/path/to/some/photo/attachment"}'`
-Response:
-```
-{
-    "id": "d8326ec8-fe70-402e-8914-ca83f0f1055b",
-    "createdAt": "2024-02-09T11:24:32.441Z",
-    "title": "UPDATED TITLE",
-    "body": "some important things",
-    "attachmentURL": "url/path/to/some/photo/attachment",
-    "updatedAt": "2024-02-09T11:26:59.002Z"
-}
-```
+### Risk Assessment
+- Real-time monitoring of vital signs
+- Automated alerts for concerning values
+- Multi-level risk categorization (LOW, MEDIUM, HIGH)
 
-### get all messages:
-- `curl <CANISTER_URL>/<REQUEST_PATH>`
-Example:
-- `curl http://bkyz2-fmaaa-aaaaa-qaaaq-cai.localhost:8000/messages`
-Response:
-```
-[
-    {
-        "id": "d8326ec8-fe70-402e-8914-ca83f0f1055b",
-        "createdAt": "2024-02-09T11:24:32.441Z",
-        "title": "UPDATED TITLE",
-        "body": "some important things",
-        "attachmentURL": "url/path/to/some/photo/attachment",
-        "updatedAt": "2024-02-09T11:26:59.002Z"
-    }
-]
-```
+### Security Features
+- Input validation for all medical data
+- Provider verification
+- Active status checking
+- Error handling with logging
 
-### get a message:
-- `curl <CANISTER_URL>/<REQUEST_PATH>/<MESSAGE_ID>`
-Example (here we only provide a message id):
-- `curl http://bkyz2-fmaaa-aaaaa-qaaaq-cai.localhost:8000/messages/d8326ec8-fe70-402e-8914-ca83f0f1055b`
-Response:
-```
-{
-    "id": "d8326ec8-fe70-402e-8914-ca83f0f1055b",
-    "createdAt": "2024-02-09T11:24:32.441Z",
-    "title": "UPDATED TITLE",
-    "body": "some important things",
-    "attachmentURL": "url/path/to/some/photo/attachment",
-    "updatedAt": "2024-02-09T11:26:59.002Z"
-}
-```
+## Troubleshooting
 
-### delete a message:
-- `curl -X DELETE <CANISTER_URL>/<REQUEST_PATH>/<MESSAGE_ID>`
-Example (here we only provide a message id):
-- `curl -X DELETE http://bkyz2-fmaaa-aaaaa-qaaaq-cai.localhost:8000/messages/d8326ec8-fe70-402e-8914-ca83f0f1055b`
-Response (returns the deleted message):
-```
-{
-    "id": "d8326ec8-fe70-402e-8914-ca83f0f1055b",
-    "createdAt": "2024-02-09T11:24:32.441Z",
-    "title": "UPDATED TITLE",
-    "body": "some important things",
-    "attachmentURL": "url/path/to/some/photo/attachment",
-    "updatedAt": "2024-02-09T11:26:59.002Z"
-}
-```
+### Common Issues
+
+1. **Configuration Reset**
+   If you need to reset the StableBTreeMap configuration:
+   ```bash
+   dfx start --host 127.0.0.1:8000 --clean
+   ```
+
+2. **Node Version**
+   Ensure correct Node.js version:
+   ```bash
+   nvm use 20
+   ```
+
+3. **Port Conflicts**
+   If port 8000 is in use:
+   ```bash
+   lsof -i :8000
+   kill -9 <PID>
+   ```
+
+### Error Messages
+
+- "Healthcare provider not found": Verify provider ID exists
+- "Invalid blood pressure range": Check input values
+- "Failed to serialize data": Verify date formats
+
+## Development Guidelines
+
+1. **Code Style**
+   - Follow TypeScript best practices
+   - Use proper error handling
+   - Add comprehensive documentation
+
+2. **Testing**
+   - Test all API endpoints
+   - Validate input ranges
+   - Check error scenarios
+
+3. **Deployment**
+   - Use clean deployment for schema changes
+   - Keep development mode off in production
+   - Monitor storage usage
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under [Insert License Name]
+
+## Support
+
+Need help? Here are your options:
+
+- Create an issue in the repository
+- Contact the development team
+- Check the troubleshooting guide
+
+## Acknowledgments
+
+- DFINITY Foundation
+- Internet Computer Protocol
+- Azle Development Team
