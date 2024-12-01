@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { StableBTreeMap, ic } from "azle";
 import express from "express";
+import rateLimit from 'express-rate-limit';
 
 /**
  * @title Maternal Health Tracking System
@@ -102,10 +103,19 @@ const visitStorage = StableBTreeMap<string, PrenatalVisit>(3);
 const alertStorage = StableBTreeMap<string, HealthAlert>(4);
 
 // Input validation functions
+function sanitizeString(input: string): string {
+    return input.replace(/[<>]/g, ''); // Basic XSS prevention
+}
+
 function validateProfile(profile: Partial<MaternalProfile>): string | null {
-    if (!profile.name || profile.name.trim().length < 2) {
-        return "Name must be at least 2 characters long";
+    if (!profile.name || profile.name.trim().length < 2 || profile.name.length > 100) {
+        return "Name must be between 2 and 100 characters";
     }
+    
+    if (profile.medicalHistory?.some(history => history.length > 1000)) {
+        return "Medical history entries cannot exceed 1000 characters";
+    }
+    
     if (!profile.age || profile.age < 16 || profile.age > 60) {
         return "Age must be between 16 and 60";
     }
@@ -132,9 +142,27 @@ function validateHealthMetrics(metrics: Partial<HealthMetrics>): string | null {
 const app = express();
 app.use(express.json());
 
+// Fix time conversion constant
+const NANOS_PER_MILLISECOND = 1_000_000n;
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
+});
+
+app.use(limiter);
+
 // Enhanced route handlers with validation and error handling
 app.post("/maternal-profiles", (req, res) => {
     try {
+        // Sanitize string inputs
+        if (req.body.name) {
+            req.body.name = sanitizeString(req.body.name);
+        }
+        if (req.body.emergencyContact) {
+            req.body.emergencyContact = sanitizeString(req.body.emergencyContact);
+        }
+
         const validationError = validateProfile(req.body);
         if (validationError) {
             return res.status(400).json({ error: validationError });
@@ -160,7 +188,7 @@ app.post("/maternal-profiles", (req, res) => {
             allergies: [],
             isHighRiskPregnancy: false,
             ...req.body,
-            dueDate: BigInt(new Date(req.body.dueDate).getTime() * 1_000_000),
+            dueDate: BigInt(new Date(req.body.dueDate).getTime()) * NANOS_PER_MILLISECOND,
         };
 
         maternalProfileStorage.insert(profile.id, profile);
@@ -171,9 +199,14 @@ app.post("/maternal-profiles", (req, res) => {
     }
 });
 
-// Record health metrics with automated risk assessment
+// Add maternal profile verification in health metrics
 app.post("/health-metrics", (req, res) => {
     try {
+        const profileOpt = maternalProfileStorage.get(req.body.maternalProfileId);
+        if (!profileOpt || "None" in profileOpt) {
+            return res.status(404).json({ error: "Maternal profile not found" });
+        }
+
         const validationError = validateHealthMetrics(req.body);
         if (validationError) {
             return res.status(400).json({ error: validationError });
@@ -228,17 +261,23 @@ function createHighRiskAlert(metrics: HealthMetrics): void {
     alertStorage.insert(alert.id, alert);
 }
 
+// Improve serialize functions with safe date handling
 function serializeProfile(profile: MaternalProfile) {
     try {
         return {
             ...profile,
-            dueDate: new Date(Number(profile.dueDate) / 1_000_000).toISOString(),
-            createdAt: new Date(Number(profile.createdAt) / 1_000_000).toISOString(),
-            lastUpdated: new Date(Number(profile.lastUpdated) / 1_000_000).toISOString(),
+            dueDate: new Date(Number(profile.dueDate / NANOS_PER_MILLISECOND)).toISOString(),
+            createdAt: new Date(Number(profile.createdAt / NANOS_PER_MILLISECOND)).toISOString(),
+            lastUpdated: new Date(Number(profile.lastUpdated / NANOS_PER_MILLISECOND)).toISOString(),
         };
     } catch (error) {
         console.error('Error serializing profile:', error);
-        throw new Error('Failed to serialize profile data');
+        return {
+            ...profile,
+            dueDate: "Invalid Date",
+            createdAt: "Invalid Date",
+            lastUpdated: "Invalid Date"
+        };
     }
 }
 
@@ -246,7 +285,7 @@ function serializeMetrics(metrics: HealthMetrics) {
     try {
         return {
             ...metrics,
-            recordedAt: new Date(Number(metrics.recordedAt) / 1_000_000).toISOString()
+            recordedAt: new Date(Number(metrics.recordedAt / NANOS_PER_MILLISECOND)).toISOString()
         };
     } catch (error) {
         console.error('Error serializing metrics:', error);
@@ -258,9 +297,9 @@ function serializeVisit(visit: PrenatalVisit) {
     try {
         return {
             ...visit,
-            scheduledDate: new Date(Number(visit.scheduledDate) / 1_000_000).toISOString(),
+            scheduledDate: new Date(Number(visit.scheduledDate / NANOS_PER_MILLISECOND)).toISOString(),
             nextVisitDate: visit.nextVisitDate
-                ? new Date(Number(visit.nextVisitDate) / 1_000_000).toISOString()
+                ? new Date(Number(visit.nextVisitDate / NANOS_PER_MILLISECOND)).toISOString()
                 : null
         };
     } catch (error) {
@@ -273,9 +312,9 @@ function serializeAlert(alert: HealthAlert) {
     try {
         return {
             ...alert,
-            createdAt: new Date(Number(alert.createdAt) / 1_000_000).toISOString(),
+            createdAt: new Date(Number(alert.createdAt / NANOS_PER_MILLISECOND)).toISOString(),
             resolvedAt: alert.resolvedAt
-                ? new Date(Number(alert.resolvedAt) / 1_000_000).toISOString()
+                ? new Date(Number(alert.resolvedAt / NANOS_PER_MILLISECOND)).toISOString()
                 : null
         };
     } catch (error) {
@@ -283,6 +322,27 @@ function serializeAlert(alert: HealthAlert) {
         throw new Error('Failed to serialize alert data');
     }
 }
+
+app.get("/maternal-profiles", (req, res) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+        
+        const profiles = Array.from(maternalProfileStorage.values())
+            .slice(skip, skip + limit)
+            .map(serializeProfile);
+            
+        res.json({
+            data: profiles,
+            page,
+            limit,
+            total: maternalProfileStorage.len()
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch profiles" });
+    }
+});
 
 app.listen();
 
